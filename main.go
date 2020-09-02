@@ -16,13 +16,13 @@ func main() {
 		log.Fatal("Unable to load environmental variables")
 		os.Exit(1)
 	}
-    
-    publicIPFromDB, err := getPublicIPAddressFromDB()
-    if err != nil {
-        panic(err.Error())
-    }
-    
-    fmt.Printf("Successfully connected to database!\r\nCurrent public IP from database: %s\n", publicIPFromDB)
+
+	publicIPFromDB, err := getPublicIPAddressFromDB()
+	if err != nil {
+		panic(err.Error())
+	}
+
+	fmt.Printf("Successfully connected to database!\r\nCurrent public IP from database: %s\n", publicIPFromDB)
 }
 
 func getPublicIPAddressFromDB() (string, error) {
@@ -42,21 +42,21 @@ func getPublicIPAddressFromDB() (string, error) {
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return "", err
-    }
-    
+	}
+
 	defer db.Close()
 
-    // Force connection to PG
+	// Force connection to PG
 	err = db.Ping()
 	if err != nil {
 		return "", err
-    }
+	}
 
-    var public string
-    err = db.QueryRow(`SELECT public FROM ip_addresses WHERE id = $1;`, 1).Scan(&public)
-    if err != nil {
-      return "", err
-    }
+	var public string
+	err = db.QueryRow(`SELECT public FROM ip_addresses WHERE id = $1;`, 1).Scan(&public)
+	if err != nil {
+		return "", err
+	}
 
-    return public, nil
+	return public, nil
 }
