@@ -8,7 +8,7 @@ If you would like to use the container that is already built (in my repo) you ca
 # ...
           containers:
             - name: godaddy-dynamic-dns
-              image: oze4/service.godaddy-dynamic-dns:latest
+              image: oze4/godaddy-dynamic-dns:latest
               env:
                 - name: PG_HOST
                   value: "-"
