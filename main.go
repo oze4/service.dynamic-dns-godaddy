@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,20 +10,20 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
 	"github.com/oze4/godaddygo"
 )
+
+type GoDaddy struct {
+	key            string
+	secret         string
+	domain         string
+	baselineRecord string
+}
 
 func main() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Unable to load environmental variables")
-		os.Exit(1)
-	}
-
-	fromdb, err := getFromDB()
-	if err != nil {
-		log.Fatalf("Error getting public IP from postgres: %s\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -33,34 +33,27 @@ func main() {
 		os.Exit(1)
 	}
 
-	if fromdb != fromapi {
-		if err := updatePublicIP(fromapi); err != nil {
+	gd := GoDaddy{
+		key:            os.Getenv("GODADDY_APIKEY"),
+		secret:         os.Getenv("GODADDY_APISECRET"),
+		domain:         os.Getenv("GODADDY_DOMAIN"),
+		baselineRecord: os.Getenv("BASELINE_RECORD"),
+	}
+
+	fromgodaddy, err := getFromGoDaddy(gd)
+	if err != nil {
+		log.Fatalf("Error getting IP from GoDaddy %s\n", err.Error())
+		os.Exit(1)
+	}
+
+	tfromapi := strings.TrimSpace(fromapi)
+	tfromgodaddy := strings.TrimSpace(fromgodaddy)
+
+	if tfromapi != tfromgodaddy {
+		if err := updateGoDaddy(gd, tfromapi); err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
-
-		api := godaddygo.ConnectProduction(
-			os.Getenv("GODADDY_APIKEY"),
-			os.Getenv("GODADDY_APISECRET"),
-		)
-
-		zone := api.V1().Domain(os.Getenv("GODADDY_DOMAIN")).Records()
-
-		records, err := zone.GetByType("A")
-		if err != nil {
-			fmt.Println(err.Error())
-			os.Exit(1)
-		}
-
-		for _, rec := range *records {
-			fmt.Printf("Updating record: %s %s %s\n", rec.Type, rec.Name, fromapi)
-			if err := zone.SetValue(rec.Type, rec.Name, fromapi); err != nil {
-				fmt.Println(err.Error())
-				fmt.Println("Despite this error we will continue.")
-			}
-		}
-	} else {
-		fmt.Printf("Public IP has not changed! %s\n", fromdb)
 	}
 
 	os.Exit(0)
@@ -71,85 +64,32 @@ func getFromAPI() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	defer resp.Body.Close()
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
-
 	return strings.TrimSpace(string(body)), nil
 }
 
-func getFromDB() (string, error) {
-	var (
-		host     = os.Getenv("PG_HOST")
-		port     = os.Getenv("PG_PORT")
-		user     = os.Getenv("PG_USER")
-		password = os.Getenv("PG_PASSWORD")
-		dbname   = os.Getenv("PG_DATABASE")
-	)
-
-	psqlInfo := fmt.Sprintf(
-		"host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname,
-	)
-
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		return "", err
+func getFromGoDaddy(g GoDaddy) (string, error) {
+	r, e := godaddygo.ConnectProduction(g.key, g.secret).V1().Domain(g.domain).Records().GetByTypeName("A", g.baselineRecord)
+	if e != nil {
+		return "", e
 	}
-
-	defer db.Close()
-
-	// Force connection to PG
-	err = db.Ping()
-	if err != nil {
-		return "", err
-	}
-
-	var public string
-	err = db.QueryRow(`SELECT public FROM ip_addresses WHERE id = $1;`, 1).Scan(&public)
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSpace(public), nil
+	return (*r)[0].Data, nil
 }
 
-func updatePublicIP(ip string) error {
-	// Yes, I know there is duplicate code, this is a tiny "microservice"
-	// so we should be fine...
-	var (
-		host     = os.Getenv("PG_HOST")
-		port     = os.Getenv("PG_PORT")
-		user     = os.Getenv("PG_USER")
-		password = os.Getenv("PG_PASSWORD")
-		dbname   = os.Getenv("PG_DATABASE")
-	)
-
-	psqlInfo := fmt.Sprintf(
-		"host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname,
-	)
-
-	db, err := sql.Open("postgres", psqlInfo)
-	if err != nil {
-		return err
+func updateGoDaddy(g GoDaddy, newIP string) error {
+	recs := godaddygo.ConnectProduction(g.key, g.secret).V1().Domain(g.domain).Records()
+	r, e := recs.GetByType("A")
+	if e != nil {
+		return e
 	}
-
-	defer db.Close()
-
-	// Force connection to PG
-	err = db.Ping()
-	if err != nil {
-		return err
+	for _, d := range *r {
+		if e := recs.SetValue(d.Type, d.Name, newIP); e != nil {
+			return errors.New("Error setting record: " + d.Name)
+		}
 	}
-
-	if _, err := db.Exec(`UPDATE ip_addresses SET public = $2 WHERE id = $1;`, 1, ip); err != nil {
-		return err
-	}
-
 	return nil
 }
