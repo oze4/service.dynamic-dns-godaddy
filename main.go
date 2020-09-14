@@ -119,6 +119,8 @@ func getFromDB() (string, error) {
 }
 
 func updatePublicIP(ip string) error {
+    // Yes, I know there is duplicate code, this is a tiny "microservice"
+    // so we should be fine...
 	var (
 		host     = os.Getenv("PG_HOST")
 		port     = os.Getenv("PG_PORT")
