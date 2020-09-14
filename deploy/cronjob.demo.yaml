@@ -1,0 +1,45 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: godaddy-dynamic-dns-cronjob
+spec:
+  ######## at every fifteenth minute
+  schedule: "*/15 * * * *"
+
+  ######## Number of containers (jobs) to keep after completing successfully
+  ######## (containers are simply powered off)
+  ######## DEFAULT IS 3
+  # successfulJobsHistoryLimit: 0
+
+  ######## Number of containers (jobs) to keep after failure
+  ######## (containers are simply powered off)
+  ######## DEFAULT IS 3 (I believe, I think I remember reading
+  ######## that, but have not confirmed)
+  # failedJobsHistoryLimit: 0
+
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: svc-godaddy-dynamic-dns
+          containers:
+            - name: godaddy-dynamic-dns
+              image: oze4/service.godaddy-dynamic-dns:latest
+              env:
+                - name: PG_HOST
+                  value: "-"
+                - name: PG_PORT
+                  value: "-"
+                - name: PG_USER
+                  value: "-"
+                - name: PG_PASSWORD
+                  value: "-"
+                - name: PG_DATABASE
+                  value: "-"
+                - name: GODADDY_APIKEY
+                  value: "-"
+                - name: GODADDY_APISECRET
+                  value: "-"
+                - name: GODADDY_DOMAIN
+                  value: "-"
+          restartPolicy: OnFailure
