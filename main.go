@@ -22,10 +22,7 @@ type GoDaddy struct {
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		fmt.Println("Unable to load environmental variables " + err.Error())
-	}
+	godotenv.Load()
 
 	fromapi, err := getFromAPI()
 	if err != nil {
@@ -50,10 +47,13 @@ func main() {
 	tfromgodaddy := strings.TrimSpace(fromgodaddy)
 
 	if tfromapi != tfromgodaddy {
+		fmt.Println("Public IP has changed, updating GoDaddy now. Old: " + tfromgodaddy + " New: " + tfromapi)
 		if err := updateGoDaddy(gd, tfromapi); err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
+	} else {
+		fmt.Println("Public IP has not changed: " + tfromapi)
 	}
 
 	os.Exit(0)
