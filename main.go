@@ -13,6 +13,7 @@ import (
 	"github.com/oze4/godaddygo"
 )
 
+// GoDaddy holds godaddy api creds
 type GoDaddy struct {
 	key            string
 	secret         string
