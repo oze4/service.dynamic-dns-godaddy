@@ -24,7 +24,7 @@ spec:
           serviceAccountName: svc-godaddy-dynamic-dns
           containers:
             - name: godaddy-dynamic-dns
-              image: oze4/service.godaddy-dynamic-dns:latest
+              image: oze4/godaddy-dynamic-dns:latest
               env:
                 - name: PG_HOST
                   value: "-"
