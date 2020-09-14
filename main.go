@@ -24,8 +24,7 @@ type GoDaddy struct {
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Unable to load environmental variables " + err.Error())
-		// os.Exit(1)
+		fmt.Println("Unable to load environmental variables " + err.Error())
 	}
 
 	fromapi, err := getFromAPI()
