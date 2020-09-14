@@ -30,14 +30,14 @@ func main() {
 	fromapi, err := getFromAPI()
 	if err != nil {
 		log.Fatalf("Error getting public IP from https://icanhazip.com %s\n", err.Error())
-	 	os.Exit(1)
-    }
+		os.Exit(1)
+	}
 
 	if fromdb != fromapi {
-        if err := updatePublicIP(fromapi); err != nil {
-            fmt.Println(err.Error())
-            os.Exit(1)
-        }
+		if err := updatePublicIP(fromapi); err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
 
 		api := godaddygo.ConnectProduction(
 			os.Getenv("GODADDY_APIKEY"),
@@ -119,8 +119,8 @@ func getFromDB() (string, error) {
 }
 
 func updatePublicIP(ip string) error {
-    // Yes, I know there is duplicate code, this is a tiny "microservice"
-    // so we should be fine...
+	// Yes, I know there is duplicate code, this is a tiny "microservice"
+	// so we should be fine...
 	var (
 		host     = os.Getenv("PG_HOST")
 		port     = os.Getenv("PG_PORT")
@@ -145,7 +145,7 @@ func updatePublicIP(ip string) error {
 	err = db.Ping()
 	if err != nil {
 		return err
-    }
+	}
 
 	if _, err := db.Exec(`UPDATE ip_addresses SET public = $2 WHERE id = $1;`, 1, ip); err != nil {
 		return err
