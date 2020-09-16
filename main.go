@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -21,8 +20,7 @@ func main() {
 
 	apires, err := api.get()
 	if err != nil {
-		log.Fatalf("Error getting public IP from %s %s\n", "https://icanhazip.com", err.Error())
-		os.Exit(1)
+		explainStrExit("Error getting public IP from https://icanhazip.com "+err.Error(), 1)
 	}
 
 	k := os.Getenv("GODADDY_APIKEY")
