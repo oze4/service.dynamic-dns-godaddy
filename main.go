@@ -14,8 +14,6 @@ import (
 	"github.com/oze4/godaddygo/pkg/endpoints"
 )
 
-const icanhazipURL = "https://icanhazip.com"
-
 func main() {
 	godotenv.Load()
 
@@ -23,7 +21,7 @@ func main() {
 
 	apires, err := api.get()
 	if err != nil {
-		log.Fatalf("Error getting public IP from %s %s\n", icanhazipURL, err.Error())
+		log.Fatalf("Error getting public IP from %s %s\n", "https://icanhazip.com", err.Error())
 		os.Exit(1)
 	}
 
@@ -75,7 +73,7 @@ func newIcanhazip() icanhazip {
 type icanhazip struct{}
 
 func (i icanhazip) get() (string, error) {
-	resp, err := http.Get(icanhazipURL)
+	resp, err := http.Get("https://icanhazip.com")
 	if err != nil {
 		return "", err
 	}
